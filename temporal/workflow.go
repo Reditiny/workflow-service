@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// ExampleWorkflow is a sample Temporal workflow that waits for a signal before proceeding.
 func ExampleWorkflow(ctx workflow.Context) error {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Workflow started")

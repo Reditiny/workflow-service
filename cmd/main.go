@@ -18,6 +18,7 @@ func main() {
 	}
 	defer tc.Close()
 
+	// Start Temporal worker in a separate goroutine
 	go func() {
 		if err := temporal.StartWorker(cfg, tc); err != nil {
 			log.Fatalf("failed to start worker: %v", err)

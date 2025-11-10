@@ -11,6 +11,7 @@ import (
 func StartWorker(cfg *config.Config, c client.Client) error {
 	w := worker.New(c, cfg.TaskQueue, worker.Options{})
 
+	// Register workflows
 	w.RegisterWorkflow(ExampleWorkflow)
 	log.Println("Worker started...")
 

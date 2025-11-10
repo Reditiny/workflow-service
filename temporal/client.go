@@ -6,6 +6,7 @@ import (
 )
 
 func NewClient(cfg *config.Config) (client.Client, error) {
+	// dial to temporal server
 	return client.Dial(client.Options{
 		HostPort: cfg.TemporalHost,
 	})
