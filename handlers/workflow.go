@@ -48,10 +48,16 @@ func (h *WorkflowHandler) StartWorkflow(c *gin.Context) {
 
 	opts := client.StartWorkflowOptions{
 		ID:        req.WorkflowID,
-		TaskQueue: req.TaskQueue,
+		TaskQueue: "default-task-queue",
 	}
 
-	wr, err := h.Cli.ExecuteWorkflow(c, opts, temporal.ExampleWorkflow)
+	//workflow, ok := temporal.Workflows[req.WorkflowType]
+	//if !ok {
+	//	c.JSON(http.StatusBadRequest, gin.H{"error": "Unknown workflow type"})
+	//	return
+	//}
+
+	wr, err := h.Cli.ExecuteWorkflow(c, opts, temporal.ExampleWorkflow, req.ArgsJSON)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -59,8 +65,9 @@ func (h *WorkflowHandler) StartWorkflow(c *gin.Context) {
 
 	resp.WorkflowID = wr.GetID()
 	resp.RunID = wr.GetRunID()
-	resp.StartedAt = time.Now()
-	c.JSON(http.StatusOK, resp)
+	resp.CreatedAt = time.Now()
+	resp.StartAt = time.Now()
+	c.JSON(http.StatusOK, models.NewResponseMessage("Workflow started", resp))
 }
 
 func (h *WorkflowHandler) DescribeWorkflow(c *gin.Context) {
@@ -91,14 +98,16 @@ func (h *WorkflowHandler) SignalWorkflow(c *gin.Context) {
 		return
 	}
 
-	err := h.Cli.SignalWorkflow(c, workflowID, "", req.SignalName, req.SignalPayload)
+	err := h.Cli.SignalWorkflow(c, workflowID, req.RunID, req.SignalName, req.SignalPayload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	resp.WorkflowID = workflowID
+	resp.RunID = req.RunID
+	resp.SignalName = req.SignalName
 	resp.SignalSentAt = time.Now()
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, models.NewResponseMessage("Signal dispatched", resp))
 }
 
 func (h *WorkflowHandler) BatchSignal(c *gin.Context) {

@@ -12,7 +12,10 @@ func StartWorker(cfg *config.Config, c client.Client) error {
 	w := worker.New(c, cfg.TaskQueue, worker.Options{})
 
 	// Register workflows
-	w.RegisterWorkflow(ExampleWorkflow)
+	for _, wf := range Workflows {
+		w.RegisterWorkflow(wf)
+	}
+
 	log.Println("Worker started...")
 
 	log.Printf("Temporal Worker started. Task Queue: %s", cfg.TaskQueue)
