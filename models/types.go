@@ -1,19 +1,95 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
-type StartWorkflowRequest struct {
-	WorkflowType string      `json:"workflow_type" binding:"required"`
-	WorkflowID   string      `json:"workflow_id,omitempty"`
-	TaskQueue    string      `json:"task_queue" binding:"required"`
-	ArgsJSON     interface{} `json:"args_json,omitempty"`
-	Timeout      string      `json:"timeout,omitempty"` // ISO8601 duration or string like "1h30m"
+type ResponseMessage struct {
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
 }
 
+func NewResponseMessage(message string, data interface{}) ResponseMessage {
+	return ResponseMessage{
+		Message: message,
+		Data:    data,
+	}
+}
+
+/*
+StartWorkflowRequest example:
+
+	{
+	  "workflow_type": "DisbursementWorkflow",
+	  "workflow_id": "f3b8f77c-9a2d-4f81-aaa8-1f1d6c39f512",
+	  "args_json": {
+		"user_id": "user_123",
+		"target_bank_account": "bank_account_456",
+		"advance_id": "adv_987",
+		"amount": 150.0
+	  },
+	  "timeout": 86400
+	}
+*/
+type StartWorkflowRequest struct {
+	WorkflowType string      `json:"workflow_type" binding:"required"` // Required. Registered Temporal workflow type
+	WorkflowID   string      `json:"workflow_id"`                      // Optional. Client-supplied idempotency key
+	ArgsJSON     interface{} `json:"args_json"`                        // Optional. Serialized workflow arguments
+	Timeout      int         `json:"timeout"`                          // Optional. Workflow execution timeout in seconds
+	StartAt      time.Time   `json:"start_at"`                         // Optional. Scheduled start time (ISO8601)
+}
+
+/*
+StartWorkflowResponse example:
+
+	{
+		"workflow_id": "f3b8f77c-9a2d-4f81-aaa8-1f1d6c39f512",
+		"run_id": "3fe4d9a8-0b4b-4520-b8ad-12f67dc862c1",
+		"created_at": "2025-11-10T08:30:00Z",
+		"start_at": "2025-11-10T08:30:00Z"
+	}
+*/
 type StartWorkflowResponse struct {
-	WorkflowID string    `json:"workflow_id"`
-	RunID      string    `json:"run_id"`
-	StartedAt  time.Time `json:"started_at"`
+	WorkflowID string    `json:"workflow_id"` // Unique workflow identifier
+	RunID      string    `json:"run_id"`      // Temporal run identifier
+	CreatedAt  time.Time `json:"created_at"`  // Workflow creation time
+	StartAt    time.Time `json:"start_at"`    // Scheduled or immediate execution start time
+}
+
+/*
+SignalWorkflowRequest example:
+
+	{
+	  "run_id": "3fe4d9a8-0b4b-4520-b8ad-12f67dc862c1",
+	  "signal_name": "CreditWebhook",
+	  "signal_payload": {
+	    "transaction_id": "tx_456",
+	    "status": "SETTLED"
+	  }
+	}
+*/
+type SignalWorkflowRequest struct {
+	WorkflowID    string      `json:"workflow_id" binding:"required"`    // Required. Running workflow
+	RunID         string      `json:"run_id"`                            // Optional. Specific run to signal
+	SignalName    string      `json:"signal_name" binding:"required"`    // Required. Registered signal channel
+	SignalPayload interface{} `json:"signal_payload" binding:"required"` // Required. Signal data
+}
+
+/*
+SignalWorkflowResponse example:
+
+	{
+		"workflow_id": "f3b8f77c-9a2d-4f81-aaa8-1f1d6c39f512",
+		"run_id": "3fe4d9a8-0b4b-4520-b8ad-12f67dc862c1",
+		"signal_name": "CreditWebhook",
+		"signal_sent_at": "2025-11-10T09:10:00Z"
+	}
+*/
+type SignalWorkflowResponse struct {
+	WorkflowID   string    `json:"workflow_id"`    // Signalled workflow
+	RunID        string    `json:"run_id"`         // Actual run that received the signal
+	SignalName   string    `json:"signal_name"`    // Echoed channel
+	SignalSentAt time.Time `json:"signal_sent_at"` // Server timestamp
 }
 
 type DescribeWorkflowResponse struct {
@@ -33,16 +109,6 @@ type CancelWorkflowRequest struct {
 type CancelWorkflowResponse struct {
 	WorkflowID  string    `json:"workflow_id"`
 	CancelledAt time.Time `json:"cancelled_at"`
-}
-
-type SignalWorkflowRequest struct {
-	SignalName    string      `json:"signal_name" binding:"required"`
-	SignalPayload interface{} `json:"signal_payload,omitempty"`
-}
-
-type SignalWorkflowResponse struct {
-	WorkflowID   string    `json:"workflow_id"`
-	SignalSentAt time.Time `json:"signal_sent_at"`
 }
 
 type ListWorkflowsRequest struct {
